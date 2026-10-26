@@ -16,6 +16,10 @@ int main(int argc, char *argv[]) {
 
     printf("%s: command not found\n", buffer);
     printf("$ ");
+
+    if (strcmp(buffer, "exit") == 0) {
+      exit(0);
+    }
   }
 
   return 0;
