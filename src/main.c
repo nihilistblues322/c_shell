@@ -16,11 +16,11 @@ int main(int argc, char *argv[]) {
 
     if (strcmp(buffer, "exit") == 0) {
       break;
+    } else if (strncmp(buffer, "echo ", 5) == 0) {
+      printf("%s\n", buffer + 5);
+    } else {
+      printf("%s: command not found\n", buffer);
     }
-
-    printf("%s: command not found\n", buffer);
-
-    
 
     printf("$ ");
   }
