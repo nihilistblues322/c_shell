@@ -15,11 +15,12 @@ int main(int argc, char *argv[]) {
     buffer[strcspn(buffer, "\n")] = '\0';
 
     printf("%s: command not found\n", buffer);
-    printf("$ ");
 
     if (strcmp(buffer, "exit") == 0) {
       break;
     }
+
+    printf("$ ");
   }
 
   return 0;
