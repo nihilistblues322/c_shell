@@ -8,12 +8,14 @@ int main(int argc, char *argv[]) {
 
   setbuf(stdout, NULL);
 
-  while (fgets(buffer, sizeof(buffer), stdin) != NULL) {
-    printf("$ ");
+  printf("$ ");
 
-    buffer[strcspn(buffer, "\n")] = "\0";
+  while (fgets(buffer, sizeof(buffer), stdin) != NULL) {
+
+    buffer[strcspn(buffer, "\n")] = '\0';
 
     printf("%s: command not found\n", buffer);
+    printf("$ ");
   }
 
   return 0;
