@@ -36,8 +36,6 @@ int main(int argc, char *argv[]) {
                 printf("%s: command not found\n", cmd);
                 break;
         }
-
-        printf("$ ");
     }
 
     return 0;
