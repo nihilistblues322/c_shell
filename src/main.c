@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "builtin.h"
 
 int main(int argc, char *argv[]) {
@@ -9,6 +10,8 @@ int main(int argc, char *argv[]) {
     setbuf(stdout, NULL);
 
     printf("$ ");
+
+
 
     while (fgets(buffer, sizeof(buffer), stdin) != NULL) {
         char *cmd = buffer;
