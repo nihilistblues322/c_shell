@@ -15,17 +15,14 @@ int lookup(const char *s) {
 
 
 void run_echo(const char *args) {
-    if (strncmp(args, "echo ", 5) == 0) {
-        printf("%s\n", args + 5);
-    }
+    printf("%s\n", args ? args : "");
 }
 
-void run_type(const char *args) {
-    const char *name = args + 5;
-
-    for (int i = 0; i < BUILTIN_COUNT; i++) {
-        if (strcmp(name, names[i]) == 0) {
-            printf("%s is a shell builtin\n", names[i]);
-        }
+void run_type(const char *name) {
+    if (!name) return;
+    if (lookup(name) != UNKNOWN) {
+        printf("%s is a shell builtin\n", name);
+    } else {
+        printf("%s: not found\n", name);
     }
 }

@@ -24,18 +24,20 @@ int main(int argc, char *argv[]) {
 
         switch (lookup(cmd)) {
             case CMD_ECHO:
-                run_echo(buffer);
+                run_echo(args);
                 break;
             case CMD_EXIT:
                 exit(0);
                 break;
             case CMD_TYPE:
-                run_type(buffer);
+                run_type(args);
                 break;
             default:
-                printf("%s: command not found\n", cmd);
+                printf("%s: not found\n", cmd);
                 break;
         }
+
+        printf("$ ");
     }
 
     return 0;
