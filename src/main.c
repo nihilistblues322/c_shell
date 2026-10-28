@@ -6,12 +6,8 @@
 
 int main(int argc, char *argv[]) {
     char buffer[1024];
-
     setbuf(stdout, NULL);
-
     printf("$ ");
-
-
 
     while (fgets(buffer, sizeof(buffer), stdin) != NULL) {
         char *cmd = buffer;
@@ -36,7 +32,12 @@ int main(int argc, char *argv[]) {
                 run_type(args);
                 break;
             default:
-                printf("%s: not found\n", cmd);
+                int run = run_external(cmd, args);
+                if (run == NOT_FOUND) {
+                    printf("%s: not found\n", cmd);
+                } else if (run == FORK_FAIL) {
+                    perror("fork error");
+                }
                 break;
         }
 
