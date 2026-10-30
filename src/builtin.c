@@ -15,7 +15,8 @@ static const struct item items[] = {
     {"echo", run_echo},
     {"exit", run_exit},
     {"type", run_type},
-    {"pwd", run_pwd}
+    {"pwd", run_pwd},
+    {"cd", run_cd},
 };
 
 const struct item *find_builtin(const char *name) {
@@ -151,5 +152,14 @@ void run_pwd(char *args) {
         printf("%s\n", buf);
     } else {
         perror("getcwd error");
+    }
+}
+
+void run_cd(char *args) {
+    if (args == NULL)
+        return;
+
+    if (chdir(args) != OK) {
+        printf("cd: %s: No such file or directory\n", args);
     }
 }

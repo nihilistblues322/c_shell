@@ -18,7 +18,9 @@ void run_type(char *args);
 
 void run_exit(char *args);
 
-int find_path(char *name, char *path, size_t size);
+void run_cd(char *args);
+
+int find_path(char *name, char *out, size_t size);
 
 int run_external(char *cmd, char *args);
 
