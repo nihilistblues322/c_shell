@@ -1,22 +1,29 @@
 ﻿#ifndef BUILTIN_H
 #define BUILTIN_H
+#include "vec.h"
+#include <stddef.h>
 
-#define OK         0
-#define NOT_FOUND -1
-#define FORK_FAIL -2
+typedef void (*builtin_fn)(char *args);
 
-enum builtin { CMD_ECHO, CMD_EXIT, CMD_TYPE, BUILTIN_COUNT, UNKNOWN = -1 };
+struct item {
+    const char *name;
+    builtin_fn func;
+};
 
-int lookup(const char *s);
+const struct item *find_builtin(const char *name);
 
-void run_echo(const char *args);
+void run_echo(char *args);
 
-void run_type(const char *args);
+void run_type(char *args);
 
-int find_path(const char *name, char *path, size_t size);
+void run_exit(char *args);
+
+int find_path(char *name, char *path, size_t size);
 
 int run_external(char *cmd, char *args);
 
-void build_argv(char *cmd, char *args, char *argv[], int max);
+int build_argv(char *cmd, char *args, struct vec *array);
+
+void run_pwd(char *args);
 
 #endif

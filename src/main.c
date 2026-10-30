@@ -1,11 +1,11 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include "builtin.h"
+#include "common.h"
+
 
 int main(int argc, char *argv[]) {
-    char buffer[1024];
+    char buffer[LINE_MAX_LEN];
     setbuf(stdout, NULL);
     printf("$ ");
 
@@ -21,24 +21,16 @@ int main(int argc, char *argv[]) {
             args = space + 1;
         }
 
-        switch (lookup(cmd)) {
-            case CMD_ECHO:
-                run_echo(args);
-                break;
-            case CMD_EXIT:
-                exit(0);
-                break;
-            case CMD_TYPE:
-                run_type(args);
-                break;
-            default:
-                int run = run_external(cmd, args);
-                if (run == NOT_FOUND) {
-                    printf("%s: not found\n", cmd);
-                } else if (run == FORK_FAIL) {
-                    perror("fork error");
-                }
-                break;
+        const struct item *builtin = find_builtin(cmd);
+
+        if (builtin != NULL) builtin->func(args);
+        else {
+            int run = run_external(cmd, args);
+            if (run == NOT_FOUND) {
+                printf("%s: not found\n", cmd);
+            } else if (run == FORK_FAIL) {
+                perror("fork error");
+            }
         }
 
         printf("$ ");
