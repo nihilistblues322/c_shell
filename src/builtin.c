@@ -10,6 +10,8 @@
 #include "vec.h"
 #include <stdbool.h>
 
+#include "sbuf.h"
+
 
 static const struct item items[] = {
     {"echo", run_echo},
@@ -172,4 +174,28 @@ void run_cd(char *args) {
     if (chdir(target) != OK) {
         printf("cd: %s: No such file or directory\n", args);
     }
+}
+
+int tokenize(const char *line, struct vec *out) {
+    struct sbuf sb;
+    sb_init(&sb);
+    int in_quote = 0;
+    int in_word = 0;
+
+    for (const char *p = line; *p != '\0'; p++) {
+        if (in_quote) {
+
+        } else if (*p == '\'') {
+
+        } else if (*p == ' ') {
+            if (in_word) {
+                
+            }
+        } else {
+            sb_push(&sb, *p);
+            in_word = 1;
+        }
+    }
+
+    return OK;
 }

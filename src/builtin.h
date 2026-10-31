@@ -28,4 +28,6 @@ int build_argv(char *cmd, char *args, struct vec *array);
 
 void run_pwd(char *args);
 
+int tokenize(const char *line, struct vec *out);
+
 #endif

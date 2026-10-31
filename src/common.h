@@ -11,6 +11,7 @@
 #define NOT_FOUND -1
 #define FORK_FAIL -2
 #define ERR_NOMEM -3
+#define ERR_SYNTAX -4
 
 #ifdef DEBUG
 #define LOG(...) fprintf(stderr, "[dbg] " __VA_ARGS__)
