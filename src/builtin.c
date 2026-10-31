@@ -159,7 +159,17 @@ void run_cd(char *args) {
     if (args == NULL)
         return;
 
-    if (chdir(args) != OK) {
+    const char *target = args;
+
+    if (strcmp(args, "~") == OK) {
+        target = getenv("HOME");
+        if (target == NULL) {
+            printf("cd: HOME not set\n");
+            return;
+        }
+    }
+
+    if (chdir(target) != OK) {
         printf("cd: %s: No such file or directory\n", args);
     }
 }
