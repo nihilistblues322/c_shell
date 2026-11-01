@@ -1,21 +1,18 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(codecrafters-shell)
+project(shell_learn C)
 
-file(GLOB_RECURSE SOURCE_FILES src/*.c src/*.h)
-
-set(CMAKE_C_STANDARD 23) # Enable the C23 standard
+set(CMAKE_C_STANDARD 23)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # compile_commands.json для clangd/CLion
 
 add_compile_options(-Wall -Wextra -g)
 add_compile_options(-fsanitize=address,undefined)
 add_link_options(-fsanitize=address,undefined)
-add_compile_definitions($<$<CONFIG:Debug>:DEBUG>)
+add_compile_definitions($<$<CONFIG:Debug>:DEBUG>) # включает LOG()/VEC_DUMP() только в Debug
 
-add_executable(shell ${SOURCE_FILES}
-        src/vec.h
-        src/vec.c)
-
-target_link_libraries(shell PRIVATE readline)
+# CONFIGURE_DEPENDS: новый .c в src/ подхватится при следующей сборке без ручного reload
+file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS src/*.c)
+add_executable(shell ${SOURCE_FILES})
 
 # --- учебные тесты: ./test_vec, ./test_sbuf или `ctest -V` ---
 option(BUILD_TESTS "Build unit tests in tests/" ON)

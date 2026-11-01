@@ -1,34 +1,34 @@
-[![progress-banner](https://backend.codecrafters.io/progress/shell/5e77bff6-e810-489c-a2ea-98654fe42612)](https://app.codecrafters.io/users/nihilistblues322?r=2qF)
+# shell_learn
 
-This is a starting point for C solutions to the
-["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
+Учебный shell на C (изучаем процессы, fork/exec, память).
 
-In this challenge, you'll build your own POSIX compliant shell that's capable of
-interpreting shell commands, running external programs and builtin commands like
-cd, pwd, echo and more. Along the way, you'll learn about shell command parsing,
-REPLs, builtin commands, and more.
+## Структура
+| Файл | Назначение |
+|---|---|
+| `src/main.c` | цикл: прочитать строку -> разобрать -> выполнить |
+| `src/tokenize.c` | разбор строки на слова (кавычки) |
+| `src/builtin.c` | встроенные команды: echo, exit, type, cd, pwd |
+| `src/exec.c` | поиск в PATH, запуск внешних программ (fork + execv) |
+| `src/vec.c`, `src/sbuf.c` | динамический массив строк и строитель строки |
+| `src/common.h` | константы, коды ошибок, `LOG` |
+| `tests/` | учебные тесты для vec, sbuf, tokenize |
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
-
-# Passing the first stage
-
-The entry point for your `shell` implementation is in `src/main.c`. Study and
-uncomment the relevant code, then run the command below to execute the tests on
-our servers:
-
-```sh
-codecrafters submit
+## Сборка и запуск
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+./build/shell
 ```
 
-Time to move on to the next stage!
+## Тесты
+```bash
+cd build && ctest --output-on-failure     # все
+./test_tokenize                            # один, с подробным выводом
+```
 
-# Stage 2 & beyond
-
-Note: This section is for stages 2 and beyond.
-
-1. Ensure you have `cmake` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `src/main.c`.
-1. Run `codecrafters submit` to submit your solution to CodeCrafters. Test
-   output will be streamed to your terminal.
+## Отладка
+- Debug-сборка печатает `[dbg] ...` в stderr (скрыть: `./build/shell 2>/dev/null`).
+  Release (`-DCMAKE_BUILD_TYPE=Release`) ничего не печатает.
+- AddressSanitizer + UBSan включены всегда: ошибки памяти и утечки видны при выходе.
+- gdb: `gdb ./build/shell`, для дочерних процессов `set follow-fork-mode child`.
+- Упавшая проверка в тестах: `gdb ./build/test_tokenize` -> `break on_fail` -> `run`.

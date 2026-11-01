@@ -53,3 +53,12 @@ dkms.conf
 
 build
 vcpkg_installed
+
+# CLion / сборка
+cmake-build-*/
+build/
+.idea/
+
+# Артефакты копирования из Windows (Zone.Identifier)
+*:Zone.Identifier
+*Zone.Identifier
