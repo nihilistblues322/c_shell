@@ -1,51 +1,94 @@
 #include "tokenize.h"
 
+#include <stdlib.h>
+
 #include "common.h"
 #include "sbuf.h"
 #include "vec.h"
 
+enum {
+    NORMAL,
+    IN_QUOTE
+};
+
 int tokenize(const char *line, struct vec *out) {
     struct sbuf sb;
     sb_init(&sb);
-    int in_quote = 0;
+
+    int state = NORMAL;
     int in_word = 0;
 
     for (const char *p = line; *p != '\0'; p++) {
-        LOG("[tok] i=%td c='%c' quote=%d word=%d sb=\"%.*s\"\n", p - line, *p, in_quote, in_word,
+        LOG("[tok] i=%td c='%c' state=%d word=%d sb=\"%.*s\"\n",
+            p - line, *p, state, in_word,
             (int)sb.len, sb.data ? sb.data : "");
 
-        if (in_quote) {
-            if (*p == '\'') {
-                in_quote = 0;
-            } else {
-                if (sb_push(&sb, *p) != OK) return ERR_NOMEM;
-            }
-        } else if (*p == '\'') {
-            in_quote = 1;
-            in_word = 1;
-        } else if (*p == ' ') {
-            if (in_quote == 1) {
-                sb_free(&sb);
-                return ERR_SYNTAX;
-            }
-            if (in_word) {
-                char *finish = sb_finish(&sb);
-                LOG("[tok] word=\"%s\"\n", finish);
-                if (vec_push(out, finish) != OK) return ERR_NOMEM;
-                in_word = 0;
-            }
-        } else {
-            if (sb_push(&sb, *p) != OK) return ERR_NOMEM;
-            in_word = 1;
+        switch (state) {
+            case IN_QUOTE:
+                if (*p == '\'') {
+                    state = NORMAL;
+                } else {
+                    if (sb_push(&sb, *p) != OK) {
+                        sb_free(&sb);
+                        return ERR_NOMEM;
+                    }
+                }
+                break;
+
+            case NORMAL:
+                switch (*p) {
+                    case '\'':
+                        state = IN_QUOTE;
+                        in_word = 1;
+                        break;
+
+                    case ' ':
+                        if (in_word) {
+                            char *finish = sb_finish(&sb);
+                            if (!finish) {
+                                sb_free(&sb);
+                                return ERR_NOMEM;
+                            }
+
+                            if (vec_push(out, finish) != OK) {
+                                free(finish);
+                                sb_free(&sb);
+                                return ERR_NOMEM;
+                            }
+
+                            in_word = 0;
+                        }
+                        break;
+
+                    default:
+                        if (sb_push(&sb, *p) != OK) {
+                            sb_free(&sb);
+                            return ERR_NOMEM;
+                        }
+                        in_word = 1;
+                        break;
+                }
+                break;
         }
     }
 
+    if (state == IN_QUOTE) {
+        sb_free(&sb);
+        return ERR_SYNTAX;
+    }
 
-    if (in_word == 1) {
+    if (in_word) {
         char *finish = sb_finish(&sb);
-        LOG("[tok] word=\"%s\" (end of line)\n", finish);
-        if (vec_push(out, finish) != OK) return ERR_NOMEM;
-        in_word = 0;
+        if (!finish) {
+            sb_free(&sb);
+            return ERR_NOMEM;
+        }
+
+        if (vec_push(out, finish) != OK) {
+            free(finish);
+            sb_free(&sb);
+            return ERR_NOMEM;
+        }
     }
 
     return OK;
