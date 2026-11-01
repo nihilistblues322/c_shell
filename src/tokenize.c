@@ -10,10 +10,9 @@ int tokenize(const char *line, struct vec *out) {
     int in_quote = 0;
     int in_word = 0;
 
-    LOG("tokenize: input <%s>\n", line);
     for (const char *p = line; *p != '\0'; p++) {
-        LOG("tokenize: char '%c' (index %td) in_quote=%d in_word=%d sb=\"%.*s\"\n", *p,
-            p - line, in_quote, in_word, (int)sb.len, sb.data ? sb.data : "");
+        LOG("[tok] i=%td c='%c' quote=%d word=%d sb=\"%.*s\"\n", p - line, *p, in_quote, in_word,
+            (int)sb.len, sb.data ? sb.data : "");
 
         if (in_quote) {
             if (*p == '\'') {
@@ -31,8 +30,7 @@ int tokenize(const char *line, struct vec *out) {
             }
             if (in_word) {
                 char *finish = sb_finish(&sb);
-                LOG("tokenize: space -> word complete \"%s\" (heap %p), push to out\n", finish,
-                    (void *)finish);
+                LOG("[tok] word=\"%s\"\n", finish);
                 if (vec_push(out, finish) != OK) return ERR_NOMEM;
                 in_word = 0;
             }
@@ -45,12 +43,10 @@ int tokenize(const char *line, struct vec *out) {
 
     if (in_word == 1) {
         char *finish = sb_finish(&sb);
-        LOG("tokenize: end of line -> word complete \"%s\" (heap %p), push to out\n", finish,
-            (void *)finish);
+        LOG("[tok] word=\"%s\" (end of line)\n", finish);
         if (vec_push(out, finish) != OK) return ERR_NOMEM;
         in_word = 0;
     }
 
-    VEC_DUMP(out, "tokenize result");
     return OK;
 }

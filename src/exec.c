@@ -15,36 +15,33 @@ int find_path(char *name, char *out, size_t size) {
 
     const char *orig_path = getenv("PATH");
     if (orig_path == NULL) {
-        LOG("find_path: PATH is not set -> NOT_FOUND\n");
         return NOT_FOUND;
     }
     char *copy_path = strdup(orig_path);
     if (copy_path == NULL) {
-        LOG("find_path: strdup failed (out of memory) -> NOT_FOUND\n");
         return NOT_FOUND;
     }
-    LOG("find_path: searching '%s' in PATH; copy_path=%p (heap copy, strtok will modify it)\n", name,
-        (void *)copy_path);
     char *dir = strtok(copy_path, ":");
     char candidate[PATH_MAX_LEN];
     struct stat info;
+    int tried = 0;
 
     while (dir != NULL) {
+        tried++;
         snprintf(candidate, sizeof(candidate), "%s/%s", dir, name);
 
         if (stat(candidate, &info) == 0 && S_ISREG(info.st_mode) && access(candidate, X_OK) == OK) {
             snprintf(out, size, "%s", candidate);
             found = true;
-            LOG("find_path:   %s -> FOUND (regular file + executable), out=\"%s\"\n", candidate, out);
             break;
         }
-        LOG("find_path:   %s -> no\n", candidate);
 
         dir = strtok(NULL, ":");
     }
 
     free(copy_path);
-    LOG("find_path: result for '%s': %s\n", name, found ? "OK" : "NOT_FOUND");
+    LOG("[path] name=\"%s\" tried=%d -> %s%s%s\n", name, tried, found ? "\"" : "",
+        found ? out : "not found", found ? "\"" : "");
 
     return found ? OK : NOT_FOUND;
 }
@@ -55,35 +52,32 @@ int run_external(char **argv) {
 
     char path[PATH_MAX_LEN];
 
-    LOG("run_external: command '%s' (argv is borrowed from main's vec, NULL-terminated)\n", cmd);
     if (find_path(cmd, path, sizeof(path)) != OK) {
-        LOG("run_external: '%s' not found in PATH, nothing to run\n", cmd);
         return NOT_FOUND;
     }
 
-    LOG("run_external: full path \"%s\", calling fork()\n", path);
+    int argc = 0;
+    while (argv[argc] != NULL) argc++;
+    LOG("[exec] path=\"%s\"\n", path);
+    LOG_ARGV("argv", argc, argv);
+
     pid_t pid = fork();
     int status;
 
     if (pid == 0) {
-        LOG("child  pid=%d: I am a copy of the shell; execv(\"%s\") replaces me with that program\n",
-            (int)getpid(), path);
+        LOG("[child] pid=%d execv\n", (int)getpid());
         execv(path, argv);
-        LOG("child  pid=%d: execv returned, so it FAILED\n", (int)getpid());
         perror("execv error");
         exit(1);
     }
     if (pid > 0) {
-        LOG("parent pid=%d: fork created child pid=%d, waiting in waitpid\n", (int)getpid(),
-            (int)pid);
+        LOG("[fork] parent=%d child=%d\n", (int)getpid(), (int)pid);
         waitpid(pid, &status, 0);
-        LOG("parent pid=%d: child %d finished, %s=%d\n", (int)getpid(), (int)pid,
-            WIFEXITED(status) ? "exit code" : "killed by signal",
+        LOG("[wait] pid=%d %s=%d\n", (int)pid, WIFEXITED(status) ? "exit" : "signal",
             WIFEXITED(status) ? WEXITSTATUS(status) : WTERMSIG(status));
         return OK;
     }
     if (pid < 0) {
-        LOG("run_external: fork failed\n");
         return FORK_FAIL;
     }
 

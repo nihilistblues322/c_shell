@@ -3,18 +3,16 @@ cmake_minimum_required(VERSION 3.13)
 project(shell_learn C)
 
 set(CMAKE_C_STANDARD 23)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # compile_commands.json для clangd/CLion
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_compile_options(-Wall -Wextra -g)
 add_compile_options(-fsanitize=address,undefined)
 add_link_options(-fsanitize=address,undefined)
-add_compile_definitions($<$<CONFIG:Debug>:DEBUG>) # включает LOG()/VEC_DUMP() только в Debug
+add_compile_definitions($<$<CONFIG:Debug>:DEBUG>)
 
-# CONFIGURE_DEPENDS: новый .c в src/ подхватится при следующей сборке без ручного reload
 file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS src/*.c)
 add_executable(shell ${SOURCE_FILES})
 
-# --- учебные тесты: ./test_vec, ./test_sbuf или `ctest -V` ---
 option(BUILD_TESTS "Build unit tests in tests/" ON)
 if (BUILD_TESTS)
     enable_testing()
