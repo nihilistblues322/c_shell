@@ -1,33 +1,26 @@
-﻿#ifndef BUILTIN_H
+#ifndef BUILTIN_H
 #define BUILTIN_H
-#include "vec.h"
-#include <stddef.h>
 
-typedef void (*builtin_fn)(char *args);
+/* Встроенные команды shell: выполняются внутри процесса shell (без fork). */
+
+typedef void (*builtin_fn)(int argc, char **argv);
 
 struct item {
     const char *name;
     builtin_fn func;
 };
 
+/* Возвращает запись таблицы builtin'ов или NULL, если name — не builtin. */
 const struct item *find_builtin(const char *name);
 
-void run_echo(char *args);
+void run_echo(int argc, char **argv);
 
-void run_type(char *args);
+void run_type(int argc, char **argv);
 
-void run_exit(char *args);
+void run_exit(int argc, char **argv);
 
-void run_cd(char *args);
+void run_cd(int argc, char **argv);
 
-int find_path(char *name, char *out, size_t size);
-
-int run_external(char *cmd, char *args);
-
-int build_argv(char *cmd, char *args, struct vec *array);
-
-void run_pwd(char *args);
-
-int tokenize(const char *line, struct vec *out);
+void run_pwd(int argc, char **argv);
 
 #endif

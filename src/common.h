@@ -15,8 +15,17 @@
 
 #ifdef DEBUG
 #define LOG(...) fprintf(stderr, "[dbg] " __VA_ARGS__)
+
+/* Debug: print argc and every argv[i] (argv may or may not end with NULL). */
+static inline void log_argv(const char *who, int argc, char **argv) {
+    fprintf(stderr, "[dbg] %s: argc=%d argv:", who, argc);
+    for (int i = 0; i < argc; i++) fprintf(stderr, " [%d]=\"%s\"", i, argv[i]);
+    fprintf(stderr, "\n");
+}
+#define LOG_ARGV(who, argc, argv) log_argv((who), (argc), (argv))
 #else
 #define LOG(...) ((void)0)
+#define LOG_ARGV(who, argc, argv) ((void)0)
 #endif
 
 #endif

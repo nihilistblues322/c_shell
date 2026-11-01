@@ -1,17 +1,11 @@
-﻿#include <stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
+#include <unistd.h>
+
 #include "builtin.h"
 #include "common.h"
-#include <stdlib.h>
-#include <unistd.h>
-#include <stddef.h>
-#include <sys/wait.h>
-#include "vec.h"
-#include <stdbool.h>
-
-#include "sbuf.h"
-
+#include "exec.h"
 
 static const struct item items[] = {
     {"echo", run_echo},
@@ -26,176 +20,98 @@ const struct item *find_builtin(const char *name) {
 
     for (size_t i = 0; i < n; i++) {
         if (strcmp(name, items[i].name) == 0) {
+            LOG("find_builtin: '%s' -> builtin #%zu\n", name, i);
             return &items[i];
         }
     }
+    LOG("find_builtin: '%s' -> not a builtin\n", name);
     return NULL;
 }
 
-void run_echo(char *args) {
-    printf("%s\n", args ? args : "");
+void run_echo(int argc, char **argv) {
+    LOG_ARGV("run_echo", argc, argv);
+    LOG("run_echo: printing %d word(s), argv[0] (\"%s\") is the command name and is skipped\n",
+        argc > 0 ? argc - 1 : 0, argc > 0 ? argv[0] : "");
+    for (int i = 1; i < argc; i++) {
+        printf("%s\n", argv[i]);
+    }
 }
 
-void run_exit(char *args) {
+void run_exit(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+    LOG("run_exit: calling exit(0), shell terminates\n");
     exit(0);
 }
 
-void run_type(char *args) {
-    if (!args) return;
+void run_type(int argc, char **argv) {
+    LOG_ARGV("run_type", argc, argv);
+    if (argc < 2) {
+        LOG("run_type: no argument after 'type', nothing to look up\n");
+        return;
+    }
 
-    char *sp = strchr(args, ' ');
+    char *sp = strchr(argv[1], ' ');
     if (sp != NULL) *sp = '\0';
 
-    const char *name = args;
+    const char *name = argv[1];
 
+    LOG("run_type: looking up '%s' (1st: builtin table, 2nd: PATH)\n", name);
     if (find_builtin(name) != NULL) {
+        LOG("run_type: '%s' found in the builtin table\n", name);
         printf("%s is a shell builtin\n", name);
     } else {
         char path[PATH_MAX_LEN];
 
         if (find_path(name, path, sizeof(path)) == OK) {
+            LOG("run_type: '%s' found in PATH -> \"%s\"\n", name, path);
             printf("%s is %s\n", name, path);
         } else {
+            LOG("run_type: '%s' is neither a builtin nor in PATH\n", name);
             printf("%s: not found\n", name);
         }
     }
 }
 
-int find_path(char *name, char *out, size_t size) {
-    bool found = false;
-
-    const char *orig_path = getenv("PATH");
-    if (orig_path == NULL) {
-        return NOT_FOUND;
-    }
-    char *copy_path = strdup(orig_path);
-    if (copy_path == NULL) {
-        return NOT_FOUND;
-    }
-    char *dir = strtok(copy_path, ":");
-    char candidate[PATH_MAX_LEN];
-    struct stat info;
-
-    while (dir != NULL) {
-        snprintf(candidate, sizeof(candidate), "%s/%s", dir, name);
-
-        if (stat(candidate, &info) == 0 && S_ISREG(info.st_mode) && access(candidate, X_OK) == OK) {
-            snprintf(out, size, "%s", candidate);
-            found = true;
-            break;
-        }
-
-        dir = strtok(NULL, ":");
-    }
-
-    free(copy_path);
-
-    return found ? OK : NOT_FOUND;
-}
-
-int run_external(char *cmd, char *args) {
-    if (cmd == NULL) {
-        return NOT_FOUND;
-    }
-
-    char path[PATH_MAX_LEN];
-    int status;
-
-    if (find_path(cmd, path, sizeof(path)) == 0) {
-        struct vec array;
-        vec_init(&array);
-
-        if (build_argv(cmd, args, &array) != OK) {
-            vec_free(&array);
-            perror("build_argv error");
-            return ERR_NOMEM;
-        }
-
-        pid_t pid = fork();
-
-        if (pid == 0) {
-            LOG("exec %s argc-built\n", path);
-            execv(path, array.items);
-            perror("execv error");
-            vec_free(&array);
-            exit(1);
-        }
-        if (pid > 0) {
-            waitpid(pid, &status, 0);
-            vec_free(&array);
-            return OK;
-        }
-        if (pid < 0) {
-            vec_free(&array);
-            return FORK_FAIL;
-        }
-    }
-
-    return NOT_FOUND;
-}
-
-int build_argv(char *cmd, char *args, struct vec *array) {
-    if (vec_push(array, cmd) != OK) {
-        return ERR_NOMEM;
-    }
-
-    if (args != NULL) {
-        for (char *tok = strtok(args, " "); tok != NULL; tok = strtok(NULL, " "))
-            if (vec_push(array, tok) != OK) return ERR_NOMEM;
-    }
-    return vec_push(array, NULL);
-}
-
-void run_pwd(char *args) {
-    (void) args;
+void run_pwd(int argc, char **argv) {
+    (void) argc;
+    (void) argv;
+    LOG_ARGV("run_pwd", argc, argv);
 
     char buf[PATH_MAX_LEN];
     if (getcwd(buf, sizeof(buf)) != NULL) {
+        LOG("run_pwd: getcwd -> \"%s\" (written into stack buffer buf)\n", buf);
         printf("%s\n", buf);
     } else {
+        LOG("run_pwd: getcwd failed\n");
         perror("getcwd error");
     }
 }
 
-void run_cd(char *args) {
-    if (args == NULL)
+void run_cd(int argc, char **argv) {
+    LOG_ARGV("run_cd", argc, argv);
+    if (argc < 2) {
+        LOG("run_cd: no argument, nothing to do\n");
         return;
+    }
 
-    const char *target = args;
+    const char *target = argv[1];
 
-    if (strcmp(args, "~") == OK) {
+    if (strcmp(argv[1], "~") == OK) {
         target = getenv("HOME");
+        LOG("run_cd: '~' expands to HOME=%s (borrowed from the environment, do not free)\n",
+            target ? target : "(unset)");
         if (target == NULL) {
             printf("cd: HOME not set\n");
             return;
         }
     }
 
+    LOG("run_cd: chdir(\"%s\")\n", target);
     if (chdir(target) != OK) {
-        printf("cd: %s: No such file or directory\n", args);
+        LOG("run_cd: chdir failed\n");
+        printf("cd: %s: No such file or directory\n", argv[1]);
+    } else {
+        LOG("run_cd: ok, the shell process changed its own working directory\n");
     }
-}
-
-int tokenize(const char *line, struct vec *out) {
-    struct sbuf sb;
-    sb_init(&sb);
-    int in_quote = 0;
-    int in_word = 0;
-
-    for (const char *p = line; *p != '\0'; p++) {
-        if (in_quote) {
-
-        } else if (*p == '\'') {
-
-        } else if (*p == ' ') {
-            if (in_word) {
-                
-            }
-        } else {
-            sb_push(&sb, *p);
-            in_word = 1;
-        }
-    }
-
-    return OK;
 }
