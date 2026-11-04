@@ -29,8 +29,12 @@ const struct item *find_builtin(const char *name) {
 void run_echo(int argc, char **argv) {
     LOG_ARGV("echo", argc, argv);
     for (int i = 1; i < argc; i++) {
-        printf("%s\n", argv[i]);
+        printf("%s", argv[i]);
+        if (i < argc - 1) {
+            printf(" ");
+        }
     }
+    printf("\n");
 }
 
 void run_exit(int argc, char **argv) {

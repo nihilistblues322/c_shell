@@ -8,7 +8,8 @@
 
 enum {
     NORMAL,
-    IN_QUOTE
+    IN_SINGLE,
+    IN_DOUBLE,
 };
 
 int tokenize(const char *line, struct vec *out) {
@@ -24,8 +25,19 @@ int tokenize(const char *line, struct vec *out) {
             (int)sb.len, sb.data ? sb.data : "");
 
         switch (state) {
-            case IN_QUOTE:
+            case IN_SINGLE:
                 if (*p == '\'') {
+                    state = NORMAL;
+                } else {
+                    if (sb_push(&sb, *p) != OK) {
+                        sb_free(&sb);
+                        return ERR_NOMEM;
+                    }
+                }
+                break;
+
+            case IN_DOUBLE:
+                if (*p == '\"') {
                     state = NORMAL;
                 } else {
                     if (sb_push(&sb, *p) != OK) {
@@ -38,10 +50,16 @@ int tokenize(const char *line, struct vec *out) {
             case NORMAL:
                 switch (*p) {
                     case '\'':
-                        state = IN_QUOTE;
+                        state = IN_SINGLE;
                         in_word = 1;
                         break;
 
+                    case '\"':
+                        state = IN_DOUBLE;
+                        in_word = 1;
+                        break;
+
+                    case '\t':
                     case ' ':
                         if (in_word) {
                             char *finish = sb_finish(&sb);
@@ -72,7 +90,7 @@ int tokenize(const char *line, struct vec *out) {
         }
     }
 
-    if (state == IN_QUOTE) {
+    if (state == IN_SINGLE || state == IN_DOUBLE) {
         sb_free(&sb);
         return ERR_SYNTAX;
     }
